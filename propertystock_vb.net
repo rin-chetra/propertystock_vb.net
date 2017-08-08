@@ -1,0 +1,179 @@
+1.Module GlobalVariableModul (Form1)
+    Public connectionString As String = "Data Source=.\SQLEXPRESS;Initial Catalog=propertystock_db;Integrated Security=True"
+End Module
+******The End******
+
+Imports System.Data.SqlClient
+
+Public Class Addphotocopy
+    Dim DS As DataSet
+    Dim con As New SqlConnection(connectionString)
+    Dim FrmUserDS_tblUser As ProperyStock.propertystock_dbDataSet
+
+2.'insert data into SQL Server (Form2)
+
+    Private Sub btn_add_Click(sender As Object, e As EventArgs) Handles btn_add.Click
+        Try
+            con.Open()
+            Dim sqlCommand As New SqlCommand
+            sqlCommand.CommandType = CommandType.Text
+            sqlCommand.Connection = con
+            sqlCommand.CommandText = "INSERT INTO tbl_photocopy (requestby,office,filename,qty,copyby) " & _
+                                    "VALUES (@requestby,@office,@filename,@qty,@copyby)"
+            With sqlCommand.Parameters
+                .AddWithValue("@requestby", txt_requestby.Text)
+                .AddWithValue("@office", cmb_office.SelectedItem)
+                .AddWithValue("@filename", txt_filename.Text)
+                .AddWithValue("@qty", txt_qty.Text)
+                .AddWithValue("@copyby", cmb_copyby.SelectedItem)
+            End With
+            sqlCommand.ExecuteNonQuery()
+
+            MsgBox("successfully", MsgBoxStyle.Information, "Successfully")
+
+            Dim adapter As New SqlDataAdapter("SELECT * FROM View_Photocopy", con)
+            Dim table As New DataTable()
+            adapter.Fill(table)
+            TblDataGridView.DataSource = table
+
+        Catch ex As Exception
+            MessageBox.Show(ex.Message)
+        Finally
+            con.Close()
+        End Try
+    End Sub
+
+3.'Show Data from SQl Server when you inserted will be Show data on DataGridViews
+
+    Private Sub load_data_to_grid()
+        Dim sql_conne As New SqlConnection(connectionString)
+        Dim adapter As New SqlDataAdapter("SELECT * FROM View_Photocopy", sql_conne)
+        Dim table As New DataTable()
+        adapter.Fill(table)
+        TblDataGridView.DataSource = table
+    End Sub
+
+    Private Sub Addphotocopy_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        load_data_to_grid()
+    End Sub
+
+4.'Update data 
+
+    Private Sub ButtonUpdate_Click(sender As Object, e As EventArgs) Handles ButtonUpdate.Click
+        Try
+            con.Open()
+            Dim Command As New SqlCommand("UPDATE tbl_photocopy Set  requestby=@requestby, office=@office, filename=@filename, qty=@qty, copyby =@copyby WHERE id =@id", con)
+            Command.Parameters.AddWithValue("@id", txt_id.Text)
+            Command.Parameters.AddWithValue("@requestby", txt_requestby.Text)
+            Command.Parameters.AddWithValue("@office", cmb_office.Text)
+            Command.Parameters.AddWithValue("@filename", txt_filename.Text)
+            Command.Parameters.AddWithValue("@qty", txt_qty.Text)
+            Command.Parameters.AddWithValue("@copyby", cmb_copyby.Text)
+
+            Command.ExecuteNonQuery()
+
+            MsgBox("Update Successfully")
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            con.Close()
+        End Try
+    End Sub
+
+5.'TblDataGridView is for show data from data SQL Server
+
+    Private Sub TblDataGridView_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles TblDataGridView.CellClick
+        
+        Try
+            con.Open()
+            Dim command As New SqlCommand("SELECT requestby, office, filename, qty, copyby FROM View_Photocopy where id=@id", con)
+
+            command.Parameters.AddWithValue("@id", TblDataGridView.CurrentRow.Cells(0).Value.ToString)
+
+            Dim reader As SqlDataReader = command.ExecuteReader()
+
+            If reader.HasRows Then
+                Do While reader.Read()
+                    txt_id.Text = TblDataGridView.CurrentRow.Cells(0).Value.ToString
+                    txt_requestby.Text = reader.GetString(0)
+                    cmb_office.Text = reader.GetString(1)
+                    txt_filename.Text = reader.GetString(2)
+                    txt_qty.Text = reader.GetString(3)
+                    cmb_copyby.Text = reader.GetString(4)
+
+                Loop
+            End If
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            con.Close()
+        End Try
+    End Sub
+6.'Delete (5)
+
+    Private Sub ButtonDelete_Click(sender As Object, e As EventArgs) Handles ButtonDelete.Click
+        Try
+            con.Open()
+            Dim Command As New SqlCommand("DELETE FROM View_Photocopy WHERE id =@id", con)
+            Command.Parameters.AddWithValue("@id", txt_id.Text)
+            Command.ExecuteNonQuery()
+            MsgBox("Delete Successfully")
+            load_data_to_grid()
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            con.Close()
+        End Try
+    End Sub
+7.'Clear (6)
+
+    Private Sub ButtonClear_Click(sender As Object, e As EventArgs) Handles ButtonClear.Click
+        txt_id.Text = ""
+        txt_requestby.Clear()
+        cmb_office.Text = ""
+        txt_filename.Clear()
+        txt_qty.Clear()
+        cmb_copyby.Text = ""
+
+    End Sub
+
+8.'(Search value)the click rows and culumn it is show amount on textbox or label...Dim table table As new DataTable is data global because 
+ 'data to use same ...(7)
+
+    Dim table As New DataTable()
+    Private Sub ButtonSearch_Click(sender As Object, e As EventArgs) Handles ButtonSearch.Click
+        Try
+            con.Open()
+            Dim Command As New SqlCommand("SELECT * FROM tbl_photocopy WHERE id =@id", con)
+            Command.Parameters.AddWithValue("@id", TblDataGridView.CurrentRow.Cells(0).Value.ToString)
+            Dim adapter As New SqlDataAdapter(Command)
+            adapter.Fill(table)
+            MessageBox.Show(table.Rows(0)("filename").ToString)
+            ' txt_id.Text = table.Rows(0)(1).ToString()
+            txt_requestby.Text = table.Rows(0)("requestby").ToString()
+            cmb_office.Text = table.Rows(0)("office").ToString()
+            txt_filename.Text = table.Rows(0)("filename").ToString()
+            txt_qty.Text = table.Rows(0)("qty").ToString
+            cmb_copyby.Text = table.Rows(0)("copyby").ToString()
+            con.Close()
+        Catch ex As Exception
+            MsgBox("Item foud")
+
+        End Try
+    End Sub
+
+9.'Show Data from SQl Server when you inserted will be Show data on DataGridViews and than copy souce code input here 
+  'because we want take sort value for faile the same ...(Is copy code 2 to input 7 for sort value)
+
+    Private Sub btb_txt_Click(sender As Object, e As EventArgs) Handles btb_txt.Click
+        Dim sql_conne As New SqlConnection(connectionString)
+        Dim adapter As New SqlDataAdapter("SELECT * FROM View_Photocopy ORDER BY [office]", sql_conne)
+        table.Clear()
+        adapter.Fill(table)
+        TblDataGridView.DataSource = table
+
+    End Sub
+End Class
